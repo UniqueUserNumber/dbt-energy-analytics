@@ -1,0 +1,24 @@
+version: 2
+sources:
+  - name: raw_energy
+    schema: raw
+    description: "Deterministic synthetic inputs loaded by scripts/load_demo.py. All timestamps are UTC."
+    tables:
+      - name: generation
+        description: "Append-only generation revisions; grain is region/hour/fuel/revision."
+        columns:
+          - name: reading_id
+            description: "Unique input revision identifier."
+            data_tests: [unique, not_null]
+      - name: facility_load
+        description: "Append-only hourly facility electricity-use revisions, in kWh."
+        columns:
+          - name: reading_id
+            description: "Unique input revision identifier."
+            data_tests: [unique, not_null]
+      - name: facilities
+        description: "Latest facility metadata; snapshot captures later owner updates."
+        columns:
+          - name: facility_id
+            description: "Stable synthetic facility identifier."
+            data_tests: [unique, not_null]

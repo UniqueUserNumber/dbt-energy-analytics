@@ -1,0 +1,7 @@
+fuel_type,co2_kg_per_mwh,is_carbon_free
+coal,950,false
+natural_gas,400,false
+nuclear,0,true
+hydro,0,true
+wind,0,true
+solar,0,true

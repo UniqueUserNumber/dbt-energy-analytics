@@ -1,0 +1,9 @@
+# This local profile contains no credentials. Keep warehouse profiles out of Git.
+dbt_energy_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', 'warehouse/energy.duckdb') }}"
+      schema: analytics
+      threads: 4

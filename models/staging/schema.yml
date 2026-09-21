@@ -1,0 +1,67 @@
+version: 2
+models:
+  - name: stg_generation
+    description: "Typed generation revisions; timestamps represent one-hour intervals starting at hour_utc."
+    columns:
+      - name: reading_id
+        description: "Unique source revision."
+        data_tests: [unique, not_null]
+      - name: region
+        description: "Synthetic grid area, using ISONE or PJM labels."
+        data_tests: [not_null]
+      - name: hour_utc
+        description: "UTC interval start."
+        data_tests: [not_null]
+      - name: fuel_type
+        description: "Normalized fuel key linked to illustrative factors."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('demo_emission_factors'), field: fuel_type}
+      - name: generation_mwh
+        description: "Electricity generated over the hour, in MWh."
+        data_tests: [not_null, non_negative]
+      - name: ingested_at
+        description: "UTC arrival time; later revisions must have later ingestion timestamps."
+        data_tests: [not_null]
+  - name: stg_facility_load
+    description: "Meter revisions with kWh converted to MWh."
+    columns:
+      - name: reading_id
+        description: "Unique source revision."
+        data_tests: [unique, not_null]
+      - name: facility_id
+        description: "Synthetic facility identifier."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_facilities'), field: facility_id}
+      - name: hour_utc
+        description: "UTC interval start."
+        data_tests: [not_null]
+      - name: load_mwh
+        description: "Electricity consumed during the hour; source kWh divided by 1000."
+        data_tests: [not_null, non_negative]
+      - name: ingested_at
+        description: "UTC ingestion time of this revision."
+        data_tests: [not_null]
+  - name: stg_facilities
+    description: "Latest facility metadata, cleaned before snapshotting."
+    columns:
+      - name: facility_id
+        description: "Stable synthetic facility identifier."
+        data_tests: [unique, not_null]
+      - name: facility_name
+        description: "Invented facility name."
+      - name: region
+        description: "Current grid region. Region remains fixed in this demo."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments: {values: ['ISONE', 'PJM']}
+      - name: owner_name
+        description: "Invented owner name; changes in updated scenario."
+        data_tests: [not_null]
+      - name: updated_at
+        description: "Reliable source update timestamp used by SCD2 snapshots."
+        data_tests: [not_null]

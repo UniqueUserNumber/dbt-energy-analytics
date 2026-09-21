@@ -1,0 +1,128 @@
+version: 2
+models:
+  - name: fct_grid_hourly
+    description: "Incremental region/hour generation-based carbon intensity. Late corrections replace matching keys."
+    columns:
+      - name: grid_hour_id
+        description: "dbt_utils surrogate key of region and hour_utc."
+        data_tests: [unique, not_null]
+      - name: region
+        description: "Synthetic grid region."
+        data_tests: [not_null]
+      - name: hour_utc
+        description: "Start of one-hour interval, UTC."
+        data_tests: [not_null]
+      - name: generation_mwh
+        description: "Total regional generation across all six fuel categories."
+        data_tests: [not_null, non_negative]
+      - name: estimated_co2_kg
+        description: "Generation multiplied by illustrative fuel-specific direct CO2 factors."
+        data_tests: [not_null, non_negative]
+      - name: carbon_free_generation_mwh
+        description: "Nuclear, hydro, wind, and solar generation; not REC-backed energy."
+        data_tests: [not_null, non_negative]
+      - name: production_co2_kg_per_mwh
+        description: "Estimated CO2 / generation; excludes imports, exports, and lifecycle emissions."
+        data_tests: [not_null, non_negative]
+      - name: carbon_free_share
+        description: "Carbon-free generated MWh divided by all generated MWh."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, max_value: 1, inclusive: true}
+      - name: fuel_count
+        description: "Number of fuels observed; fixture contract requires six, including zeros."
+      - name: ingested_at
+        description: "Latest ingestion time among the hour's fuel records; incremental watermark."
+        data_tests: [not_null]
+  - name: dim_facilities
+    description: "Current metadata from the SCD2 snapshot; one row per facility."
+    columns:
+      - name: facility_id
+        description: "Stable facility key."
+        data_tests: [unique, not_null]
+      - name: facility_name
+        description: "Invented facility name."
+      - name: region
+        description: "Current region; assumed fixed for the demo history."
+      - name: owner_name
+        description: "Latest owner observed by the snapshot."
+      - name: updated_at
+        description: "Source update timestamp for this version."
+  - name: fct_facility_hourly
+    description: "One facility/hour; load multiplied by a generation-based emissions proxy. Not validated Scope 2 accounting."
+    columns:
+      - name: facility_hour_id
+        description: "Surrogate key of facility_id and hour_utc."
+        data_tests: [unique, not_null]
+      - name: facility_id
+        description: "Synthetic facility key."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_facilities'), field: facility_id}
+      - name: region
+        description: "Facility's current grid region."
+        data_tests: [not_null]
+      - name: hour_utc
+        description: "Start of consumption interval, UTC."
+        data_tests: [not_null]
+      - name: load_mwh
+        description: "Hourly metered electricity use in MWh."
+        data_tests: [not_null, non_negative]
+      - name: production_co2_kg_per_mwh
+        description: "Same-hour regional production-based factor."
+        data_tests: [not_null]
+      - name: carbon_free_share
+        description: "Same-hour carbon-free generation share."
+      - name: estimated_production_proxy_co2_kg
+        description: "load_mwh * production_co2_kg_per_mwh; illustrative estimate."
+        data_tests: [not_null, non_negative]
+  - name: mart_facility_daily
+    description: "UTC daily facility totals with load-weighted metrics and explicit coverage."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: {combination_of_columns: [facility_id, date_utc]}
+    columns:
+      - name: facility_id
+        description: "Synthetic facility key."
+      - name: region
+        description: "Current grid region."
+      - name: date_utc
+        description: "UTC date; each complete day contains 24 hours."
+      - name: observed_hours
+        description: "Meter intervals present."
+      - name: matched_grid_hours
+        description: "Intervals with a non-null grid factor."
+      - name: load_mwh
+        description: "Total electricity use for observed hours."
+      - name: estimated_production_proxy_co2_kg
+        description: "Sum of hourly estimates; null when a factor is missing."
+        data_tests: [not_null, non_negative]
+      - name: load_weighted_co2_kg_per_mwh
+        description: "Daily estimated emissions / daily load; not a simple average of hourly factors."
+      - name: load_weighted_carbon_free_share
+        description: "Average grid carbon-free share weighted by facility load, not contractual matching."
+  - name: mart_cleaner_windows
+    description: "Retrospective lowest-intensity contiguous 3-hour window, compared to an 18:00 UTC start."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: {combination_of_columns: [region, date_utc]}
+    columns:
+      - name: region
+        description: "Synthetic region."
+      - name: date_utc
+        description: "UTC date; candidates do not cross midnight."
+      - name: best_start_hour_utc
+        description: "Earliest starting hour among tied best complete windows."
+        data_tests: [not_null]
+      - name: best_co2_kg_per_mwh
+        description: "Average intensity over the best 3-hour constant-power window."
+      - name: baseline_co2_kg_per_mwh
+        description: "Average intensity from 18:00 through 20:59:59 UTC."
+        data_tests: [not_null]
+      - name: job_energy_mwh
+        description: "Three MWh: 1 MW constant power for three hours."
+      - name: illustrative_co2_difference_kg
+        description: "Average-factor estimate difference vs baseline, not marginal avoided emissions."
+        data_tests: [not_null, non_negative]

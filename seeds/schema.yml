@@ -1,0 +1,16 @@
+version: 2
+seeds:
+  - name: demo_emission_factors
+    description: "Illustrative direct CO2 factors, invented for this demo. Not official factors, CO2e, or lifecycle emissions."
+    columns:
+      - name: fuel_type
+        description: "Synthetic generation fuel category."
+        data_tests: [unique, not_null]
+      - name: co2_kg_per_mwh
+        description: "Assumed direct CO2 kg per MWh; fixed across regions and time."
+        data_tests:
+          - not_null
+          - non_negative
+      - name: is_carbon_free
+        description: "True for zero direct CO2 in this simplified model; not a contractual clean-energy claim."
+        data_tests: [not_null]

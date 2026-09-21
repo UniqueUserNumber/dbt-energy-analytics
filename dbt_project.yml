@@ -1,0 +1,30 @@
+name: dbt_energy_analytics
+version: 1.0.0
+config-version: 2
+profile: dbt_energy_analytics
+require-dbt-version: [">=1.11.0", "<1.12.0"]
+model-paths: [models]
+seed-paths: [seeds]
+snapshot-paths: [snapshots]
+test-paths: [tests]
+macro-paths: [macros]
+analysis-paths: [analyses]
+clean-targets: [target, dbt_packages]
+models:
+  dbt_energy_analytics:
+    +persist_docs: {relation: true, columns: true}
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+    marts:
+      +materialized: table
+      +schema: marts
+seeds:
+  dbt_energy_analytics:
+    +schema: reference
+snapshots:
+  dbt_energy_analytics:
+    +schema: snapshots

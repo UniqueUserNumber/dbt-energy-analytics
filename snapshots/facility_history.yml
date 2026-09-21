@@ -1,0 +1,14 @@
+version: 2
+snapshots:
+  - name: facility_history
+    relation: ref('stg_facilities')
+    description: "SCD2 facility ownership history, observed at each dbt build."
+    config:
+      unique_key: facility_id
+      strategy: timestamp
+      updated_at: updated_at
+      hard_deletes: invalidate
+    columns:
+      - name: dbt_scd_id
+        description: "dbt-generated version identifier."
+        data_tests: [unique, not_null]

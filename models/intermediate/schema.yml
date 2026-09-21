@@ -1,0 +1,17 @@
+version: 2
+models:
+  - name: int_generation_latest
+    description: "One latest revision per region, UTC hour, and fuel."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: {combination_of_columns: [region, hour_utc, fuel_type]}
+  - name: int_load_latest
+    description: "One latest revision per facility and UTC hour."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: {combination_of_columns: [facility_id, hour_utc]}
+  - name: int_grid_hourly
+    description: "Generation and estimated direct CO2 totals by region/hour. Missing factors produce null totals."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: {combination_of_columns: [region, hour_utc]}
