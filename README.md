@@ -7,6 +7,9 @@
 
 An energy analytics project by Michael Maggioli.
 
+**Learning dbt? Start with the [step-by-step course](docs/learning_path.md): ten
+lessons with commands, expected results, exercises, and a Fivetran/Snowflake extension.**
+
 How does the electricity mix change through the day? What does that mean for a
 facility's estimated emissions? When would a flexible workload encounter a
 lower-carbon grid mix?
@@ -155,7 +158,7 @@ Your normal demo warehouse is untouched.
 
 ## Build on it
 
-Start with [the learning path](docs/learning_path.md), then read
+Start with [the step-by-step learning guide](docs/learning_path.md), then read
 [the methodology and data contracts](docs/methodology.md).
 
 Good next projects are a real public data adapter, timestamp and DST handling,
